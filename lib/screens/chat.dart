@@ -12,7 +12,7 @@ class ChatScreen extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () {
-              kAuthService.logout();
+              authService.logout();
             },
             icon: Icon(
               Icons.exit_to_app,

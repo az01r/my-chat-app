@@ -23,8 +23,8 @@ class App extends StatelessWidget {
             seedColor: const Color.fromARGB(255, 59, 43, 28)),
       ),
       home: StreamBuilder(
-        stream: kAuthService.authStateChanges,
-        initialData: kAuthService.currentState,
+        stream: authService.authStateChanges,
+        initialData: authService.currentState,
         builder: (ctx, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const SplashScreen();

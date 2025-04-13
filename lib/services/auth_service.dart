@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -7,7 +8,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
-final kAuthService = AuthService();
+final authService = AuthService();
 
 // Simple class to hold auth state (could be more complex)
 class AuthState {
@@ -21,8 +22,8 @@ class AuthState {
 
 class AuthService {
   // Use BehaviorSubject to replay the last state
-  final _authStateController =
-      BehaviorSubject<AuthState>.seeded(AuthState(userId: null, token: null)); // Start unauthenticated
+  final _authStateController = BehaviorSubject<AuthState>.seeded(
+      AuthState(userId: null, token: null)); // Start unauthenticated
   final _storage = const FlutterSecureStorage();
   final String _backendUrl =
       '${dotenv.env['BACKEND_URL']}:${dotenv.env['BACKEND_PORT']}';
@@ -58,19 +59,14 @@ class AuthService {
     }
   }
 
-  // --- API Methods ---
-
   Future<void> signup({
     required String nickname,
     required String email,
     required String password,
     required String confirmPassword,
+    required File profileImage,
   }) async {
     final url = Uri.parse('$_backendUrl/auth/signup');
-
-    if (confirmPassword != password) {
-      throw Exception('Passwords do not match');
-    }
 
     try {
       final response = await http
@@ -121,16 +117,19 @@ class AuthService {
   }
 
   // Common response handling logic
-  Future<void> _handleAuthResponse(http.Response response, {bool isSignup = false}) async {
+  Future<void> _handleAuthResponse(http.Response response,
+      {bool isSignup = false}) async {
     final responseBody = json.decode(response.body);
 
-    if ((isSignup && response.statusCode == 201) || (!isSignup && response.statusCode == 200)) {
+    if ((isSignup && response.statusCode == 201) ||
+        (!isSignup && response.statusCode == 200)) {
       print('${isSignup ? 'Signup' : 'Login'} successful');
 
       if (isSignup) {
         // If signup doesn't return a token, you might need to call login immediately after
         // Or adjust your backend signup to return a token directly
-        print( 'Signup successful. User ID: ${responseBody['userId']}. Please login.');
+        print(
+            'Signup successful. User ID: ${responseBody['userId']}. Please login.');
         // Optionally, trigger login here or guide user
         return; // Don't proceed to token handling if signup doesn't provide one
       }
@@ -186,5 +185,4 @@ class AuthService {
     }
     return token;
   }
-
 }
