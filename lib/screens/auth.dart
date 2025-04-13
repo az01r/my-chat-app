@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:chat_app/services/auth_service.dart';
 
-final _authService = AuthService();
-
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -27,11 +25,14 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       if (_isLogin) {
-        final response = await _authService.login(_enteredEmail, _enteredPassword);
-        print(response);
+        await kAuthService.login(
+            email: _enteredEmail, password: _enteredPassword);
       } else {
-        final response = await _authService.signup(_enteredNickname, _enteredEmail, _enteredPassword, _enteredConfirmPassword);
-        print(response);
+        await kAuthService.signup(
+            nickname: _enteredNickname,
+            email: _enteredEmail,
+            password: _enteredPassword,
+            confirmPassword: _enteredConfirmPassword);
       }
     } catch (error) {
       if (mounted) {
@@ -131,9 +132,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                       value.length < 8)
                                   ? 'Password must be at least 8 characters long'
                                   : null,
-                            onSaved: (value) {
-                              _enteredConfirmPassword = value!;
-                            },
+                              onSaved: (value) {
+                                _enteredConfirmPassword = value!;
+                              },
                             ),
                           const SizedBox(height: 12),
                           ElevatedButton(

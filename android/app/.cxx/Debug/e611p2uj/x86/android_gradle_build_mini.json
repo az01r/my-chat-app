@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "C:\\Users\\paolo\\flutter\\packages\\flutter_tools\\gradle\\src\\main\\groovy\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\paolo\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\Users\\paolo\\Projects\\FlutterProjects\\chat_app\\android\\app\\.cxx\\Debug\\e611p2uj\\x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\paolo\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\Users\\paolo\\Projects\\FlutterProjects\\chat_app\\android\\app\\.cxx\\Debug\\e611p2uj\\x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

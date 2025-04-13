@@ -1,3 +1,4 @@
+import 'package:chat_app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class ChatScreen extends StatelessWidget {
@@ -8,6 +9,17 @@ class ChatScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Chat App'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              kAuthService.logout();
+            },
+            icon: Icon(
+              Icons.exit_to_app,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+        ],
       ),
       body: const Center(
         child: Text('Logged in!'),
