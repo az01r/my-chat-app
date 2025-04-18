@@ -8,7 +8,7 @@ class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
   @override
-  State<StatefulWidget> createState() => _AuthScreenState();
+  State<AuthScreen> createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends State<AuthScreen> {
@@ -20,25 +20,31 @@ class _AuthScreenState extends State<AuthScreen> {
   var _enteredPassword = '';
   var _enteredConfirmPassword = '';
   File? _selectedImage;
+  var _isAuthenticating = false;
 
   void _submit() async {
     final isValid = _form.currentState!.validate();
-
-    try {
-      if (!isValid) {
+    if (!isValid) {
+      return;
+    }
+    if (!_isLogin) {
+      if (_enteredPassword != _enteredConfirmPassword) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Passwords do not match.'),
+            duration: Duration(seconds: 5),
+          ),
+        );
         return;
       }
-      if (!_isLogin) {
-        if (_enteredPassword != _enteredConfirmPassword) {
-          throw Exception('Passwords do not match.');
-        }
-        if (_selectedImage == null) {
-          throw Exception('Please, insert a profile image.');
-        }
-      }
+    }
+    _form.currentState!.save();
 
-      _form.currentState!.save();
-
+    try {
+      setState(() {
+        _isAuthenticating = true;
+      });
       if (_isLogin) {
         await authService.login(
             email: _enteredEmail, password: _enteredPassword);
@@ -47,10 +53,15 @@ class _AuthScreenState extends State<AuthScreen> {
             nickname: _enteredNickname,
             email: _enteredEmail,
             password: _enteredPassword,
-            confirmPassword: _enteredConfirmPassword,
-            profileImage: _selectedImage!);
+            confirmPassword: _enteredConfirmPassword);
+        if (_selectedImage != null) {
+          await authService.uploadAvatar(_selectedImage!);
+        }
       }
     } catch (error) {
+      setState(() {
+        _isAuthenticating = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -170,25 +181,29 @@ class _AuthScreenState extends State<AuthScreen> {
                                   },
                                 ),
                               const SizedBox(height: 12),
-                              ElevatedButton(
-                                onPressed: _submit,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .primaryContainer,
+                              if (_isAuthenticating)
+                                const CircularProgressIndicator(),
+                              if (!_isAuthenticating)
+                                ElevatedButton(
+                                  onPressed: _submit,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer,
+                                  ),
+                                  child: Text(_isLogin ? 'Login' : 'Signup'),
                                 ),
-                                child: Text(_isLogin ? 'Login' : 'Signup'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isLogin = !_isLogin;
-                                  });
-                                },
-                                child: Text(_isLogin
-                                    ? 'Create an account'
-                                    : 'I already have an account'),
-                              ),
+                              if (!_isAuthenticating)
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _isLogin = !_isLogin;
+                                    });
+                                  },
+                                  child: Text(_isLogin
+                                      ? 'Create an account'
+                                      : 'I already have an account'),
+                                ),
                             ],
                           ),
                         ),

@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:rxdart/rxdart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 
 final authService = AuthService();
 
@@ -44,28 +46,21 @@ class AuthService {
     final userId = await _storage.read(key: 'userId');
 
     if (token != null && userId != null) {
-      // Optional but recommended: Check if token is expired client-side
-      // Note: Server verification is the *only* truly secure way
       if (JwtDecoder.isExpired(token)) {
-        print("Stored token is expired. Logging out.");
         await logout(); // Clear expired token
       } else {
-        print("Found valid token. User is logged in.");
         _authStateController.add(AuthState(userId: userId, token: token));
       }
     } else {
-      print("No stored token found. User is logged out.");
-      _authStateController.add(AuthState(userId: null, token: null));
+      await logout();
     }
   }
 
-  Future<void> signup({
-    required String nickname,
-    required String email,
-    required String password,
-    required String confirmPassword,
-    required File profileImage,
-  }) async {
+  Future<void> signup(
+      {required String nickname,
+      required String email,
+      required String password,
+      required String confirmPassword}) async {
     final url = Uri.parse('$_backendUrl/auth/signup');
 
     try {
@@ -77,17 +72,16 @@ class AuthService {
               'nickname': nickname,
               'email': email,
               'password': password,
-              'confirmPassword': confirmPassword,
+              'confirmPassword': confirmPassword
             }),
           )
           .timeout(const Duration(seconds: 5));
 
-      _handleAuthResponse(response, isSignup: true);
+      await _handleAuthResponse(response, isSignup: true);
     } on TimeoutException catch (_) {
       throw Exception(
           'Signup request timed out. Please check your connection.');
     } catch (e) {
-      print("Signup Error (catch): $e");
       throw Exception('An unexpected error occurred during signup.');
     }
   }
@@ -111,8 +105,7 @@ class AuthService {
     } on TimeoutException catch (_) {
       throw Exception('Login request timed out. Please check your connection.');
     } catch (e) {
-      print("Login Error (catch): $e");
-      throw Exception('An unexpected error occurred during login.');
+      rethrow;
     }
   }
 
@@ -120,48 +113,26 @@ class AuthService {
   Future<void> _handleAuthResponse(http.Response response,
       {bool isSignup = false}) async {
     final responseBody = json.decode(response.body);
-
     if ((isSignup && response.statusCode == 201) ||
         (!isSignup && response.statusCode == 200)) {
-      print('${isSignup ? 'Signup' : 'Login'} successful');
-
-      if (isSignup) {
-        // If signup doesn't return a token, you might need to call login immediately after
-        // Or adjust your backend signup to return a token directly
-        print(
-            'Signup successful. User ID: ${responseBody['userId']}. Please login.');
-        // Optionally, trigger login here or guide user
-        return; // Don't proceed to token handling if signup doesn't provide one
-      }
-
-      // --- Handle Login Success (or Signup if it returns token) ---
       final token = responseBody['jwt'] as String?;
       if (token == null) {
         throw Exception('Login successful but no token received from server.');
       }
 
-      // Decode USER ID from token (basic client-side decode)
       final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
       final userId = decodedToken['userId'] as String?;
 
-      if (userId == null) {
-        throw Exception(
-            'Login successful but could not extract userId from token.');
-      }
-
-      // Store securely
+      // Store data
       await _storage.write(key: 'authToken', value: token);
       await _storage.write(key: 'userId', value: userId);
 
       // Update stream
       _authStateController.add(AuthState(userId: userId, token: token));
     } else {
-      // Handle Errors
       final errorMessage = responseBody['message'] ??
           (responseBody['errors'] as List?)?.join(', ') ??
           'Unknown error';
-      print(
-          '${isSignup ? 'Signup' : 'Login'} failed (${response.statusCode}): $errorMessage');
       throw Exception('${isSignup ? 'Signup' : 'Login'} failed: $errorMessage');
     }
   }
@@ -177,12 +148,49 @@ class AuthService {
 
   // Method to get the current token for authenticated requests (like Socket.IO)
   Future<String?> getToken() async {
-    // Optionally add expiry check here too before returning
     final token = await _storage.read(key: 'authToken');
     if (token != null && JwtDecoder.isExpired(token)) {
       await logout(); // Log out if token is expired when trying to use it
       return null;
     }
     return token;
+  }
+
+  Future<void> uploadAvatar(File image) async {
+    final url = Uri.parse('$_backendUrl/upload/avatar');
+
+    try {
+      String? token = await getToken();
+      if (token != null) {
+        var request = http.MultipartRequest('POST', url);
+        request.headers['Authorization'] = 'Bearer $token';
+
+        String? mimeType = lookupMimeType(image.path);
+        MediaType? contentType;
+        if (mimeType != null) {
+          contentType = MediaType.parse(mimeType);
+        }
+
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'avatar',
+            image.path,
+            contentType: contentType,
+          ),
+        );
+
+        var streamedResponse =
+            await request.send().timeout(const Duration(seconds: 10));
+        var response = await http.Response.fromStream(streamedResponse);
+        if (response.statusCode != 200) {
+          throw Exception('Image upload failed: ${response.statusCode}');
+        }
+      }
+    } on TimeoutException catch (_) {
+      throw Exception(
+          'Image upload request timed out. Please check your connection.');
+    } catch (e) {
+      throw Exception('An unexpected error occurred during image upload: $e');
+    }
   }
 }
