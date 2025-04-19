@@ -22,24 +22,24 @@ class AuthState {
 }
 
 class AuthService {
-  // Use BehaviorSubject to replay the last state
-  final _authStateController = BehaviorSubject<AuthState>.seeded(
-      AuthState(userId: null, token: null)); // Start unauthenticated
+  // BehaviorSubject replay the last state
+  final _authStateController =
+      BehaviorSubject<AuthState>.seeded(AuthState(userId: null, token: null));
+
   final _storage = const FlutterSecureStorage();
+
   final String _backendUrl =
       '${dotenv.env['BACKEND_URL']}:${dotenv.env['BACKEND_PORT']}';
 
-  // Public stream for UI consumption
   Stream<AuthState> get authStateChanges => _authStateController.stream;
 
   // Get current state synchronously (use with caution)
   AuthState get currentState => _authStateController.value;
 
   AuthService() {
-    _initialize(); // Check initial state when service is created
+    _initialize();
   }
 
-  // Check storage on startup
   Future<void> _initialize() async {
     final token = await _storage.read(key: 'authToken');
     final userId = await _storage.read(key: 'userId');
@@ -58,8 +58,7 @@ class AuthService {
   Future<void> signup(
       {required String nickname,
       required String email,
-      required String password,
-      required String confirmPassword}) async {
+      required String password}) async {
     final url = Uri.parse('$_backendUrl/auth/signup');
 
     try {
@@ -67,21 +66,37 @@ class AuthService {
           .post(
             url,
             headers: {'Content-Type': 'application/json'},
-            body: json.encode({
-              'nickname': nickname,
-              'email': email,
-              'password': password,
-              'confirmPassword': confirmPassword
-            }),
+            body: json.encode(
+                {'nickname': nickname, 'email': email, 'password': password}),
           )
           .timeout(const Duration(seconds: 5));
 
-      await _handleAuthResponse(response, isSignup: true);
+      final responseBody = json.decode(response.body);
+      if (response.statusCode == 201) {
+        final token = responseBody['jwt'] as String?;
+        if (token == null) {
+          throw Exception(
+              'Signup successful but no token received from server.');
+        }
+
+        final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+        final userId = decodedToken['userId'] as String?;
+
+        // Store data
+        await _storage.write(key: 'authToken', value: token);
+        await _storage.write(key: 'userId', value: userId);
+
+        // Update stream
+        _authStateController.add(AuthState(userId: userId, token: token));
+      } else {
+        final errorMessage = responseBody['message'] ?? 'Unknown error';
+        throw Exception('Signup failed: $errorMessage');
+      }
     } on TimeoutException catch (_) {
       throw Exception(
           'Signup request timed out. Please check your connection.');
     } catch (e) {
-      throw Exception('An unexpected error occurred during signup.');
+      rethrow;
     }
   }
 
@@ -100,39 +115,31 @@ class AuthService {
           )
           .timeout(const Duration(seconds: 5));
 
-      await _handleAuthResponse(response);
+      final responseBody = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final token = responseBody['jwt'] as String?;
+        if (token == null) {
+          throw Exception(
+              'Login successful but no token received from server.');
+        }
+
+        final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+        final userId = decodedToken['userId'] as String?;
+
+        // Store data
+        await _storage.write(key: 'authToken', value: token);
+        await _storage.write(key: 'userId', value: userId);
+
+        // Update stream
+        _authStateController.add(AuthState(userId: userId, token: token));
+      } else {
+        final errorMessage = responseBody['message'] ?? 'Unknown error';
+        throw Exception('Login failed: $errorMessage');
+      }
     } on TimeoutException catch (_) {
       throw Exception('Login request timed out. Please check your connection.');
     } catch (e) {
       rethrow;
-    }
-  }
-
-  // Common response handling logic
-  Future<void> _handleAuthResponse(http.Response response,
-      {bool isSignup = false}) async {
-    final responseBody = json.decode(response.body);
-    if ((isSignup && response.statusCode == 201) ||
-        (!isSignup && response.statusCode == 200)) {
-      final token = responseBody['jwt'] as String?;
-      if (token == null) {
-        throw Exception('Login successful but no token received from server.');
-      }
-
-      final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-      final userId = decodedToken['userId'] as String?;
-
-      // Store data
-      await _storage.write(key: 'authToken', value: token);
-      await _storage.write(key: 'userId', value: userId);
-
-      // Update stream
-      _authStateController.add(AuthState(userId: userId, token: token));
-    } else {
-      final errorMessage = responseBody['message'] ??
-          (responseBody['errors'] as List?)?.join(', ') ??
-          'Unknown error';
-      throw Exception('${isSignup ? 'Signup' : 'Login'} failed: $errorMessage');
     }
   }
 

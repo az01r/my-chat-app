@@ -52,8 +52,7 @@ class _AuthScreenState extends State<AuthScreen> {
         await authService.signup(
             nickname: _enteredNickname,
             email: _enteredEmail,
-            password: _enteredPassword,
-            confirmPassword: _enteredConfirmPassword);
+            password: _enteredPassword);
         if (_selectedImage != null) {
           await authService.uploadAvatar(_selectedImage!);
         }
