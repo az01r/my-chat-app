@@ -5,21 +5,13 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:rxdart/rxdart.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:chat_app/utils/global_backend_url.dart';
+import 'package:chat_app/models/auth_state.dart';
 
 final authService = AuthService();
-
-class AuthState {
-  final String? userId;
-  final String? token; // Keep token for authenticated requests
-
-  AuthState({this.userId, this.token});
-
-  bool get isAuthenticated => userId != null && token != null;
-}
 
 class AuthService {
   // BehaviorSubject replay the last state
@@ -27,9 +19,6 @@ class AuthService {
       BehaviorSubject<AuthState>.seeded(AuthState(userId: null, token: null));
 
   final _storage = const FlutterSecureStorage();
-
-  final String _backendUrl =
-      '${dotenv.env['BACKEND_URL']}:${dotenv.env['BACKEND_PORT']}';
 
   Stream<AuthState> get authStateChanges => _authStateController.stream;
 
@@ -59,7 +48,7 @@ class AuthService {
       {required String nickname,
       required String email,
       required String password}) async {
-    final url = Uri.parse('$_backendUrl/auth/signup');
+    final url = Uri.parse('${GlobalBackendUrl.kBackendUrl}/auth/signup');
 
     try {
       final response = await http
@@ -101,7 +90,7 @@ class AuthService {
   }
 
   Future<void> login({required String email, required String password}) async {
-    final url = Uri.parse('$_backendUrl/auth/login');
+    final url = Uri.parse('${GlobalBackendUrl.kBackendUrl}/auth/login');
 
     try {
       final response = await http
@@ -163,7 +152,7 @@ class AuthService {
   }
 
   Future<void> uploadAvatar(File image) async {
-    final url = Uri.parse('$_backendUrl/upload/avatar');
+    final url = Uri.parse('${GlobalBackendUrl.kBackendUrl}/upload/avatar');
 
     try {
       String? token = await getToken();
