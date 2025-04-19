@@ -83,10 +83,7 @@ class _AuthScreenState extends State<AuthScreen> {
           Positioned.fill(
             child: Image.asset(
               'assets/images/chat.png',
-              fit: BoxFit.cover, // Fills the screen, might crop image
-              // Other BoxFit options:
-              // BoxFit.fill (stretches, might distort aspect ratio)
-              // BoxFit.contain (ensures whole image visible, might leave empty space)
+              fit: BoxFit.cover,
             ),
           ),
           Center(
@@ -94,16 +91,6 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Container(
-                  //   margin: const EdgeInsets.only(
-                  //     top: 30,
-                  //     bottom: 20,
-                  //     left: 20,
-                  //     right: 20,
-                  //   ),
-                  //   width: 200,
-                  //   child: Image.asset('assets/images/chat.png'),
-                  // ),
                   Card(
                     margin: const EdgeInsets.all(20),
                     child: SingleChildScrollView(
@@ -120,20 +107,21 @@ class _AuthScreenState extends State<AuthScreen> {
                                     _selectedImage = pickedImage;
                                   },
                                 ),
-                              TextFormField(
-                                decoration: const InputDecoration(
-                                  labelText: 'Nickname',
+                              if (!_isLogin)
+                                TextFormField(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Nickname',
+                                  ),
+                                  keyboardType: TextInputType.name,
+                                  textCapitalization: TextCapitalization.none,
+                                  validator: (value) =>
+                                      (value == null || value.trim().isEmpty)
+                                          ? 'Please enter a nickname'
+                                          : null,
+                                  onSaved: (value) {
+                                    _enteredNickname = value!;
+                                  },
                                 ),
-                                keyboardType: TextInputType.name,
-                                textCapitalization: TextCapitalization.none,
-                                validator: (value) =>
-                                    (value == null || value.trim().isEmpty)
-                                        ? 'Please enter a nickname'
-                                        : null,
-                                onSaved: (value) {
-                                  _enteredNickname = value!;
-                                },
-                              ),
                               TextFormField(
                                 decoration: const InputDecoration(
                                   labelText: 'Email address',

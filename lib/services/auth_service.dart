@@ -12,7 +12,6 @@ import 'package:http_parser/http_parser.dart';
 
 final authService = AuthService();
 
-// Simple class to hold auth state (could be more complex)
 class AuthState {
   final String? userId;
   final String? token; // Keep token for authenticated requests

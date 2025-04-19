@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:chat_app/services/auth_service.dart';
 
-class ChatScreen extends StatelessWidget {
-  const ChatScreen({super.key});
+class ContactListScreen extends StatefulWidget {
+  const ContactListScreen({super.key});
 
+  @override
+  State<ContactListScreen> createState() => _ContactListScreenState();
+}
+
+class _ContactListScreenState extends State<ContactListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Chat App'),
+        title: const Text('Contacts'),
         actions: [
           IconButton(
             onPressed: () {
@@ -22,7 +27,7 @@ class ChatScreen extends StatelessWidget {
         ],
       ),
       body: const Center(
-        child: Text('Chat Screen Placeholder!'),
+        child: Text('Contacts Screen Placeholder!'),
       ),
     );
   }

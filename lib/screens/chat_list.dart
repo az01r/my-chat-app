@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:chat_app/services/auth_service.dart';
 
-class ChatScreen extends StatelessWidget {
-  const ChatScreen({super.key});
+class ChatListScreen extends StatelessWidget {
+  const ChatListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,10 @@ class ChatScreen extends StatelessWidget {
         ],
       ),
       body: const Center(
-        child: Text('Chat Screen Placeholder!'),
+        child: Text(
+          'Chat List Screen - Placeholder',
+          style: TextStyle(fontSize: 20),
+        ),
       ),
     );
   }

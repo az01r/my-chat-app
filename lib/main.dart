@@ -1,5 +1,5 @@
 import 'package:chat_app/screens/auth.dart';
-import 'package:chat_app/screens/chat.dart';
+import 'package:chat_app/screens/index.dart';
 import 'package:chat_app/screens/splash.dart';
 import 'package:chat_app/services/auth_service.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +17,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FlutterChat',
+      title: 'Flutter Chat App',
       theme: ThemeData().copyWith(
         colorScheme: ColorScheme.fromSeed(
             seedColor: const Color.fromARGB(255, 59, 43, 28)),
@@ -25,12 +25,12 @@ class App extends StatelessWidget {
       home: StreamBuilder(
         stream: authService.authStateChanges,
         initialData: authService.currentState,
-        builder: (ctx, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+        builder: (ctx, authSnapshot) {
+          if (authSnapshot.connectionState == ConnectionState.waiting) {
             return const SplashScreen();
           }
-          if (snapshot.hasData && snapshot.data!.isAuthenticated) {
-            return const ChatScreen();
+          if (authSnapshot.hasData && authSnapshot.data!.isAuthenticated) {
+            return const IndexScreen();
           }
           return const AuthScreen();
         },
