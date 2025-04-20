@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:chat_app/services/socket_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:rxdart/rxdart.dart';
@@ -22,32 +23,45 @@ class AuthService {
 
   Stream<AuthState> get authStateChanges => _authStateController.stream;
 
-  // Get current state synchronously (use with caution)
   AuthState get currentState => _authStateController.value;
 
   AuthService() {
-    _initialize();
+    _setAuthState();
   }
 
-  Future<void> _initialize() async {
+  Future<void> _setAuthState() async {
+    final token = await getToken();
+    if (token == null) return;
+
+    final userId = await getUserId();
+    if (userId == null) return;
+
+    _authStateController.add(AuthState(userId: userId, token: token));
+  }
+
+  Future<String?> getToken() async {
     final token = await _storage.read(key: 'authToken');
-    final userId = await _storage.read(key: 'userId');
-
-    if (token != null && userId != null) {
-      if (JwtDecoder.isExpired(token)) {
-        await logout(); // Clear expired token
-      } else {
-        _authStateController.add(AuthState(userId: userId, token: token));
-      }
-    } else {
+    if (token == null || JwtDecoder.isExpired(token)) {
       await logout();
+      return null;
     }
+    return token;
   }
 
-  Future<void> signup(
-      {required String nickname,
-      required String email,
-      required String password}) async {
+  Future<String?> getUserId() async {
+    final userId = await _storage.read(key: 'userId');
+    if (userId == null) {
+      await logout();
+      return null;
+    }
+    return userId;
+  }
+
+  Future<void> signup({
+    required String nickname,
+    required String email,
+    required String password,
+  }) async {
     final url = Uri.parse('${GlobalBackendUrl.kBackendUrl}/auth/signup');
 
     try {
@@ -71,20 +85,22 @@ class AuthService {
         final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         final userId = decodedToken['userId'] as String?;
 
-        // Store data
+        // Store data & update stream
         await _storage.write(key: 'authToken', value: token);
         await _storage.write(key: 'userId', value: userId);
-
-        // Update stream
         _authStateController.add(AuthState(userId: userId, token: token));
+
+        socketService.connect();
       } else {
-        final errorMessage = responseBody['message'] ?? 'Unknown error';
+        final errorMessage = responseBody['message'];
         throw Exception('Signup failed: $errorMessage');
       }
     } on TimeoutException catch (_) {
+      await logout();
       throw Exception(
           'Signup request timed out. Please check your connection.');
-    } catch (e) {
+    } catch (error) {
+      await logout();
       rethrow;
     }
   }
@@ -115,40 +131,35 @@ class AuthService {
         final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         final userId = decodedToken['userId'] as String?;
 
-        // Store data
+        // Store data & update stream
         await _storage.write(key: 'authToken', value: token);
         await _storage.write(key: 'userId', value: userId);
-
-        // Update stream
         _authStateController.add(AuthState(userId: userId, token: token));
+        
+        socketService.connect();
       } else {
         final errorMessage = responseBody['message'] ?? 'Unknown error';
         throw Exception('Login failed: $errorMessage');
       }
     } on TimeoutException catch (_) {
+      await logout();
       throw Exception('Login request timed out. Please check your connection.');
-    } catch (e) {
+    } catch (error) {
+      await logout();
       rethrow;
     }
   }
 
   Future<void> logout() async {
-    // Delete from storage
-    await _storage.delete(key: 'authToken');
-    await _storage.delete(key: 'userId');
-    // Update stream
-    _authStateController.add(AuthState(userId: null, token: null));
-    print("User logged out.");
-  }
-
-  // Method to get the current token for authenticated requests (like Socket.IO)
-  Future<String?> getToken() async {
-    final token = await _storage.read(key: 'authToken');
-    if (token != null && JwtDecoder.isExpired(token)) {
-      await logout(); // Log out if token is expired when trying to use it
-      return null;
+    try {
+      // Delete from storage & update stream
+      await _storage.delete(key: 'authToken');
+      await _storage.delete(key: 'userId');
+      _authStateController.add(AuthState(userId: null, token: null));
+      socketService.disconnect();
+    } catch (error) {
+      print('Error occured while logging out: $error');
     }
-    return token;
   }
 
   Future<void> uploadAvatar(File image) async {

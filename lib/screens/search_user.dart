@@ -1,6 +1,5 @@
 import 'package:chat_app/models/user.dart';
 import 'package:chat_app/screens/chat.dart';
-import 'package:chat_app/services/auth_service.dart';
 import 'package:chat_app/services/user_service.dart';
 import 'package:flutter/material.dart';
 
@@ -52,32 +51,24 @@ class _SearchUserScreenState extends State<SearchUserScreen> {
     }
   }
 
-  void _navigateToChat(
-      {required String userId,
-      required String nickname,
-      required String email}) {
+  void _navigateToChat({
+    required String userId,
+    required String nickname,
+    required String email,
+  }) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (ctx) => const ChatScreen()),
+      MaterialPageRoute(
+          builder: (ctx) => ChatScreen(
+                recipientUserId: userId,
+                recipientNickname: nickname,
+              )),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Search any user by E-Mail'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              authService.logout();
-            },
-            icon: Icon(
-              Icons.exit_to_app,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(),
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [

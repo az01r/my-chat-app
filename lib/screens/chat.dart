@@ -1,28 +1,43 @@
+import 'package:chat_app/widgets/chat_messages.dart';
+import 'package:chat_app/widgets/new_chat_message.dart';
 import 'package:flutter/material.dart';
-import 'package:chat_app/services/auth_service.dart';
 
-class ChatScreen extends StatelessWidget {
-  const ChatScreen({super.key});
+class ChatScreen extends StatefulWidget {
+  final String recipientUserId;
+  final String recipientNickname;
+
+  const ChatScreen({
+    super.key,
+    required this.recipientUserId,
+    required this.recipientNickname,
+  });
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Chat App'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              authService.logout();
-            },
-            icon: Icon(
-              Icons.exit_to_app,
-              color: Theme.of(context).primaryColor,
+        title: Text(widget.recipientNickname),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ChatMessages(
+                recipientUserId: widget.recipientUserId,
+                recipientNickname: widget.recipientNickname,
             ),
           ),
+          NewChatMessage(
+            recipientUserId: widget.recipientUserId,
+            recipientNickname: widget.recipientNickname,
+          ),
         ],
-      ),
-      body: const Center(
-        child: Text('Chat Screen Placeholder!'),
       ),
     );
   }

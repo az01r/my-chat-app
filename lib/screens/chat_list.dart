@@ -23,9 +23,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         title: const Text('My Chat App'),
         actions: [
           IconButton(
-            onPressed: () {
-              authService.logout();
-            },
+            onPressed: authService.logout,
             icon: Icon(
               Icons.exit_to_app,
               color: Theme.of(context).primaryColor,
