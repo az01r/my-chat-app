@@ -1,10 +1,11 @@
 import 'package:chat_app/models/user.dart';
-import 'package:chat_app/screens/chat.dart';
 import 'package:chat_app/services/user_service.dart';
 import 'package:flutter/material.dart';
 
 class SearchUserScreen extends StatefulWidget {
-  const SearchUserScreen({super.key});
+  final void Function({required String userId, required String nickname, required String email}) onTabFetchedUser;
+
+  const SearchUserScreen({super.key, required this.onTabFetchedUser});
 
   @override
   State<SearchUserScreen> createState() => _SearchUserScreenState();
@@ -49,20 +50,6 @@ class _SearchUserScreenState extends State<SearchUserScreen> {
         );
       }
     }
-  }
-
-  void _navigateToChat({
-    required String userId,
-    required String nickname,
-    required String email,
-  }) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-          builder: (ctx) => ChatScreen(
-                recipientUserId: userId,
-                recipientNickname: nickname,
-              )),
-    );
   }
 
   @override
@@ -132,7 +119,7 @@ class _SearchUserScreenState extends State<SearchUserScreen> {
                                         .toUpperCase()),
                                   ),
                                   title: Text(_fetchedUser!.nickname),
-                                  onTap: () => _navigateToChat(
+                                  onTap: () => widget.onTabFetchedUser(
                                     userId: _fetchedUser!.userId,
                                     nickname: _fetchedUser!.nickname,
                                     email: _fetchedUser!.email,
