@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:chat_app/models/message.dart';
 import 'package:chat_app/services/message_service.dart';
 import 'package:chat_app/services/socket_service.dart';
+import 'package:chat_app/widgets/message_bubble.dart';
 import 'package:flutter/material.dart';
 
 class ChatMessages extends StatefulWidget {
@@ -71,17 +72,21 @@ class _ChatMessagesState extends State<ChatMessages> {
             itemCount: _messages.length,
             itemBuilder: (ctx, index) {
               final msg = _messages[index];
-              // TODO: Build message bubbles (align left/right based on msg.isOwn)
-              return ListTile(
-                title: Text(msg.message),
-                subtitle:
-                    Text('${msg.timestamp.toLocal()}'),
-                leading: msg.isOwn
-                    ? null
-                    : const Icon(Icons.person), // Example alignment hint
-                trailing: msg.isOwn
-                    ? const Icon(Icons.person)
-                    : null, // Example alignment hint
+              final nextMsg =
+                  index + 1 < _messages.length ? _messages[index + 1] : null;
+              final nextUserIsSame = msg.senderUserId == nextMsg?.senderUserId;
+              if (nextUserIsSame) {
+                return MessageBubble.next(
+                  message: msg.message,
+                  timestamp: msg.timestamp,
+                  isMe: msg.isOwn,
+                );
+              }
+              return MessageBubble.first(
+                userImage: 'TODO msg.avatar',
+                message: msg.message,
+                timestamp: msg.timestamp,
+                isMe: msg.isOwn,
               );
             },
           );
@@ -91,34 +96,5 @@ class _ChatMessagesState extends State<ChatMessages> {
         }
       },
     );
-
-    // return ListView.builder(
-    //   padding: const EdgeInsets.only(
-    //     bottom: 40,
-    //     left: 13,
-    //     right: 13,
-    //   ),
-    //   reverse: true, // reverse the list order
-    //   itemCount: loadedMessages.length,
-    //   itemBuilder: (ctx, index) {
-    //     final chatMessage = loadedMessages[index];
-    //     final nextChatMessage = index + 1 < loadedMessages.length
-    //         ? loadedMessages[index + 1]
-    //         : null;
-    //     final currentMessageUserId = chatMessage.senderUserId;
-    //     final nextMessageUserId = nextChatMessage?.senderUserId;
-    //     final nextUserIsSame = nextMessageUserId == currentMessageUserId;
-
-    //     if (nextUserIsSame) {
-    //       return MessageBubble.next(
-    //           message: chatMessage.message,
-    //           isMe: chatMessage.isOwn);
-    //     }
-    //     return MessageBubble.first(
-    //         // userImage: chatMessage['userImage'],
-    //         message: chatMessage.message,
-    //         isMe: chatMessage.isOwn);
-    //   },
-    // );
   }
 }
