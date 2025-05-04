@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:chat_app/models/user.dart';
+import 'package:chat_app/services/image_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:chat_app/services/auth_service.dart';
 import 'package:chat_app/utils/global_backend_url.dart';
@@ -82,6 +84,7 @@ class UserService {
             userId: userId,
             nickname: userData['nickname'] as String,
             email: userData['email'] as String,
+            avatarPath: userData['avatar'] as String?,
           );
         } else {
           throw Exception('User data missing in successful response.');
@@ -125,11 +128,18 @@ class UserService {
         if (contacts != null) {
           List<User> result = [];
           for (var contact in contacts) {
+            String? avatarPath = contact['avatar'];
+            Uint8List? avatar;
+            if (avatarPath != null) {
+              avatar = await ImageService.fetchImage(
+                  "${GlobalBackendUrl.kBackendUrl}/$avatarPath");
+            }
             result.add(User(
               userId: contact['userId'],
               nickname: contact['nickname'],
               email: contact['email'],
-              avatar: contact['avatar'],
+              avatarPath: avatarPath,
+              avatar: avatar,
             ));
           }
           return result;
@@ -139,7 +149,8 @@ class UserService {
       } else {
         // Handle other errors (400, 401, 500 etc.)
         final responseBody = json.decode(response.body);
-        final errorMessage = responseBody['message'] ?? 'Failed to load contacts';
+        final errorMessage =
+            responseBody['message'] ?? 'Failed to load contacts';
         throw Exception(
             'Failed to load contacts: $errorMessage (${response.statusCode})');
       }

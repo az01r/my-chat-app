@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -6,8 +7,8 @@ class MessageBubble extends StatelessWidget {
   // Create a message bubble which is meant to be the first in the sequence.
   const MessageBubble.first({
     super.key,
-    required this.userImage,
-    this.username,
+    required this.avatar,
+    required this.nickname,
     required this.message,
     required this.timestamp,
     required this.isMe,
@@ -20,8 +21,8 @@ class MessageBubble extends StatelessWidget {
     required this.timestamp,
     required this.isMe,
   })  : isFirstInSequence = false,
-        userImage = null,
-        username = null;
+        avatar = null,
+        nickname = null;
 
   // Whether or not this message bubble is the first in a sequence of messages
   // from the same user.
@@ -32,9 +33,9 @@ class MessageBubble extends StatelessWidget {
 
   // Image of the user to be displayed next to the bubble.
   // Not required if the message is not the first in a sequence.
-  final String? userImage;
+  final Uint8List? avatar;
 
-  final String? username;
+  final String? nickname;
   final String message;
 
   final DateTime timestamp;
@@ -48,22 +49,24 @@ class MessageBubble extends StatelessWidget {
 
     return Stack(
       children: [
-        if (userImage != null)
+        if (nickname != null)
           Positioned(
             top: 15,
             // Align user image to the right, if the message is from me.
             right: isMe ? 0 : null,
-            child: CircleAvatar(
-              // backgroundImage: NetworkImage(
-              //   userImage!,
-              // ),
-              backgroundColor: theme.colorScheme.primary.withAlpha(180),
-              radius: 23,
-              child: Text(
-                '?',
-                style: TextStyle(color: theme.colorScheme.onSecondary),
-              ),
-            ),
+            child: avatar == null
+                ? CircleAvatar(
+                    backgroundColor: theme.colorScheme.primary.withAlpha(180),
+                    radius: 23,
+                    child: Text(
+                      nickname!.substring(0, 1).toUpperCase(),
+                      style: TextStyle(color: theme.colorScheme.onSecondary),
+                    ),
+                  )
+                : CircleAvatar(
+                    backgroundImage: MemoryImage(avatar!),
+                    radius: 23,
+                  ),
           ),
         Container(
           // Add some margin to the edges of the messages, to allow space for the
@@ -81,14 +84,14 @@ class MessageBubble extends StatelessWidget {
                   // First messages in the sequence provide a visual buffer at
                   // the top.
                   if (isFirstInSequence) const SizedBox(height: 18),
-                  if (username != null)
+                  if (nickname != null)
                     Padding(
                       padding: const EdgeInsets.only(
                         left: 13,
                         right: 13,
                       ),
                       child: Text(
-                        username!,
+                        nickname!,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,

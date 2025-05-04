@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:chat_app/services/image_service.dart';
 import 'package:chat_app/widgets/user_image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:chat_app/services/auth_service.dart';
@@ -54,7 +55,7 @@ class _AuthScreenState extends State<AuthScreen> {
             email: _enteredEmail,
             password: _enteredPassword);
         if (_selectedImage != null) {
-          await authService.uploadAvatar(_selectedImage!);
+          await ImageService.uploadAvatar(_selectedImage!);
         }
       }
     } catch (error) {

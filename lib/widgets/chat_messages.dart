@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:chat_app/models/message.dart';
 import 'package:chat_app/services/message_service.dart';
@@ -9,11 +10,17 @@ import 'package:flutter/material.dart';
 class ChatMessages extends StatefulWidget {
   final String recipientUserId;
   final String recipientNickname;
+  final Uint8List? recipientAvatar;
+  final Uint8List? avatar;
+  final String nickname;
 
   const ChatMessages({
     super.key,
     required this.recipientUserId,
     required this.recipientNickname,
+    this.recipientAvatar,
+    required this.nickname,
+    this.avatar,
   });
 
   @override
@@ -29,22 +36,21 @@ class _ChatMessagesState extends State<ChatMessages> {
   void initState() {
     super.initState();
     _messagesFuture = MessageService.getMessagesWith(widget.recipientUserId);
+
     // Listen to incoming messages
     _messageSubscription = socketService.incomingMessages.listen((message) {
-      // TODO: Filter messages meant for THIS specific chat screen
-      // For now, adding all received messages for simplicity in example
       if (message.senderUserId == widget.recipientUserId ||
           message.recipientUserId == widget.recipientUserId) {
-        print("ChatScreen: Received message relevant to this chat.");
         if (mounted) {
           setState(() {
             _messages.insert(
                 0, message); // Add to beginning for ListView.builder reverse
           });
         }
-      } else {
-        print("ChatScreen: Received message for different chat, ignoring.");
       }
+      // else {
+      //   print("ChatScreen: Received message for different chat, ignoring.");
+      // }
     });
   }
 
@@ -83,7 +89,8 @@ class _ChatMessagesState extends State<ChatMessages> {
                 );
               }
               return MessageBubble.first(
-                userImage: 'TODO msg.avatar',
+                avatar: msg.isOwn ? widget.avatar : widget.recipientAvatar,
+                nickname: msg.isOwn ? widget.nickname : widget.recipientNickname,
                 message: msg.message,
                 timestamp: msg.timestamp,
                 isMe: msg.isOwn,

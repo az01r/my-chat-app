@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:chat_app/models/user.dart';
 import 'package:chat_app/screens/chat.dart';
 import 'package:chat_app/screens/search_user.dart';
+import 'package:chat_app/services/image_service.dart';
 import 'package:chat_app/services/socket_service.dart';
 import 'package:chat_app/services/user_service.dart';
+import 'package:chat_app/utils/global_backend_url.dart';
 import 'package:flutter/material.dart';
 import 'package:chat_app/services/auth_service.dart';
 
@@ -18,6 +21,7 @@ class ContactsScreen extends StatefulWidget {
 class _ContactsScreenState extends State<ContactsScreen> {
   StreamSubscription? _messageSubscription;
   List<User> _contacts = [];
+  late Uint8List _avatar;
 
   void _navigateToSearchUser() {
     Navigator.of(context).push(
@@ -39,13 +43,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
     required String userId,
     required String nickname,
     required String email,
+    Uint8List? avatar,
+    Uint8List? theirAvatar,
   }) {
     Navigator.of(context).push(
       MaterialPageRoute(
-          builder: (ctx) => ChatScreen(
-                recipientUserId: userId,
-                recipientNickname: nickname,
-              )),
+        builder: (ctx) => ChatScreen(
+          recipientUserId: userId,
+          recipientNickname: nickname,
+          avatar: avatar,
+          recipientAvatar: theirAvatar,
+        ),
+      ),
     );
   }
 
@@ -69,6 +78,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
     });
   }
 
+  void _loadAvatar() async {
+    String? path = await authService.getAvatarPath();
+    if (path == null) {
+      String? userId = await authService.getUserId();
+      if (userId == null) return;
+      User? user = await UserService.searchUserById(userId);
+      if (user == null || user.avatarPath == null) return;
+      path = user.avatarPath;
+    }
+    _avatar = await ImageService.fetchImage("${GlobalBackendUrl.kBackendUrl}/$path");
+  }
+
   @override
   void dispose() {
     _messageSubscription?.cancel();
@@ -79,6 +100,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   void initState() {
     super.initState();
     _loadContacts();
+    _loadAvatar();
   }
 
   @override
@@ -113,20 +135,23 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 itemCount: _contacts.length,
                 itemBuilder: (ctx, index) {
                   final contact = _contacts[index];
-
                   return ListTile(
                     leading: CircleAvatar(
-                      // Placeholder avatar
-                      child:
-                          Text(contact.nickname.substring(0, 1).toUpperCase()),
+                      backgroundImage: contact.avatar != null
+                          ? MemoryImage(contact.avatar!)
+                          : null,
+                      child: contact.avatar == null
+                          ? Text(contact.nickname.substring(0, 1).toUpperCase())
+                          : null,
                     ),
                     title: Text(contact.nickname),
                     subtitle: Text(contact.email),
                     onTap: () => navigateToChat(
-                      userId: contact.userId,
-                      nickname: contact.nickname,
-                      email: contact.email,
-                    ),
+                        userId: contact.userId,
+                        nickname: contact.nickname,
+                        email: contact.email,
+                        avatar: _avatar,
+                        theirAvatar: contact.avatar),
                   );
                 },
               ),
