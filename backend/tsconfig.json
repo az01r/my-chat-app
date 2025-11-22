@@ -1,0 +1,19 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "module": "nodenext",           // Standard Node.js modules
+    "moduleResolution": "nodenext", // logic that matches how Node looks for files
+    "esModuleInterop": true,        // Allows simpler imports
+    "target": "esnext",             // Valid JS version for modern Node
+    "lib": ["esnext"],
+    "sourceMap": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "removeComments": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+  },
+  "include": ["src/**/*"], // Only compile files in src
+}
