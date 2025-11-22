@@ -13,6 +13,7 @@ import messageRouter from './routes/message-router.js';
 import errorRouter from "./routes/error-router.js";
 import notFoundRouter from "./routes/not-found-router.js";
 import { runSocketIO } from "./utils/socket.js";
+import corsManager from "./utils/corsManager.js";
 
 if (
   !process.env.MONGO_USER ||
@@ -38,12 +39,7 @@ app.use(express.json());
 
 app.use(helmet()); // Security headers
 
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', `*`);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    next();
-});
+app.use(corsManager);
 
 const __filename = fileURLToPath(import.meta.url); // Get the file path
 const __dirname = path.dirname(__filename); // Get the directory name
@@ -67,5 +63,5 @@ const server = createServer(app);
 runSocketIO(server);
 
 server.listen(process.env.PORT, () => {
-  console.log(`\x1b[32m\Server is listening on port ${process.env.PORT}\x1b[0m`);
+  console.log(`\x1b[32m\Server listening on port \x1b[34m${process.env.PORT}\x1b[0m`);
 });
