@@ -14,7 +14,7 @@
 
 ## .env frontend settings
 
-If running on local machine remember to set the correct BACKEND_PORT
+If running on local machine remember to set the correct BACKEND_URL
 
 Web `BACKEND_URL=http://127.0.0.1`
 
